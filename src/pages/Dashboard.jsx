@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Trophy, Activity, LogOut, User, Home } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Play, Trophy, Activity, LogOut, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+// 🌟 引入拆分出來的子元件
+import LeaderboardTab from '../components/dashboard/LeaderboardTab';
+import HistoryTab from '../components/dashboard/HistoryTab';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -55,7 +58,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-900 text-white py-10 px-6 overflow-y-auto">
       <div className="max-w-4xl mx-auto">
         
-        {/* 🌟 頂部歡迎列：加入大頭貼顯示邏輯 */}
+        {/* 頂部歡迎列 */}
         <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
           <div className="flex items-center gap-5">
             {currentUser.avatar ? (
@@ -75,11 +78,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <button 
-              onClick={() => navigate('/')} 
-              className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors flex items-center justify-center"
-              title="返回首頁"
-            >
+            <button onClick={() => navigate('/')} className="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors flex items-center justify-center" title="返回首頁">
               <Home size={20} />
             </button>
             <button onClick={() => navigate('/test')} className="flex-1 md:flex-none bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(22,163,74,0.3)] transition-transform hover:scale-105 active:scale-95">
@@ -96,7 +95,7 @@ export default function Dashboard() {
           
           <div className="flex border-b border-slate-700">
             <button onClick={() => setActiveTab('leaderboard')} className={`flex-1 py-5 flex items-center justify-center gap-2 font-bold transition-colors text-lg ${activeTab === 'leaderboard' ? 'bg-slate-700/50 text-blue-400 border-b-2 border-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
-              <Trophy size={20} /> 英雄榜 Top 10
+              <Trophy size={20} /> 排行榜 Top 10
             </button>
             <button onClick={() => setActiveTab('history')} className={`flex-1 py-5 flex items-center justify-center gap-2 font-bold transition-colors text-lg ${activeTab === 'history' ? 'bg-slate-700/50 text-green-400 border-b-2 border-green-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
               <Activity size={20} /> 我的成長軌跡
@@ -104,57 +103,9 @@ export default function Dashboard() {
           </div>
 
           <div className="p-8">
-            {activeTab === 'leaderboard' && (
-              <div className="space-y-4">
-                {leaderboard.length === 0 ? <p className="text-center text-slate-400 py-10">目前無人挑戰，搶下首殺吧！</p> : 
-                  leaderboard.map((player, index) => (
-                    <div key={index} className="flex items-center justify-between bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-colors">
-                      <div className="flex items-center gap-4">
-                        {/* 排名徽章 */}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${index === 0 ? 'bg-yellow-500 text-yellow-900 shadow-[0_0_10px_rgba(234,179,8,0.5)]' : index === 1 ? 'bg-slate-300 text-slate-800' : index === 2 ? 'bg-amber-700 text-amber-100' : 'bg-slate-700 text-slate-400'}`}>
-                          {index + 1}
-                        </div>
-                        
-                        {/* 🌟 排行榜大頭貼 */}
-                        {player.avatar ? (
-                          <img src={player.avatar} alt={player.nickname} className="w-12 h-12 rounded-full object-cover border border-slate-600 shrink-0" />
-                        ) : (
-                          <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-slate-400 shrink-0">
-                            <User size={20} />
-                          </div>
-                        )}
-
-                        <div>
-                          <p className="font-bold text-slate-100 text-lg">{player.nickname}</p>
-                          <p className="text-sm text-slate-500">{player.created_at}</p>
-                        </div>
-                      </div>
-                      <div className="text-2xl font-black text-blue-400">{player.score} <span className="text-sm font-normal text-slate-500">分</span></div>
-                    </div>
-                  ))
-                }
-              </div>
-            )}
-
-            {activeTab === 'history' && (
-              <div>
-                {myRecords.length === 0 ? (
-                  <p className="text-center text-slate-400 py-20 text-lg">您還沒有任何測驗紀錄，點擊右上方開始您的第一次挑戰！</p>
-                ) : (
-                  <div className="h-80 w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={myRecords} margin={{ top: 10, right: 20, bottom: 5, left: -20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="created_at" stroke="#94a3b8" tick={{fontSize: 12}} />
-                        <YAxis domain={[0, 100]} stroke="#94a3b8" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', color: '#f8fafc', borderRadius: '12px' }} itemStyle={{ color: '#4ade80', fontWeight: 'bold' }} />
-                        <Line type="monotone" dataKey="score" name="測驗分數" stroke="#4ade80" strokeWidth={4} activeDot={{ r: 8, fill: '#4ade80', stroke: '#1e293b', strokeWidth: 2 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* 🌟 畫面渲染交給外包的子元件 */}
+            {activeTab === 'leaderboard' && <LeaderboardTab leaderboard={leaderboard} />}
+            {activeTab === 'history' && <HistoryTab myRecords={myRecords} />}
           </div>
         </motion.div>
       </div>
