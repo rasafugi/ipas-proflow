@@ -73,25 +73,37 @@ class IPASFileParser:
             global_id += 1
 
         # ==========================================
-        # 🎯 魔法陣 2：解答抓取 (改良版煞車系統)
+        # 🎯 魔法陣 2：解答抓取 (防彈升級版)
         # ==========================================
         ans_pattern = re.compile(
-            r'(?:^|\n)\s*(\d+)\.\s*Ans\s*[\(（]([A-D])[\)）]\s*解析[：:]\s*'
-            # 🛑 煞車系統：遇到下一題、章節號(3.3)、或參考文獻，立刻停止！
-            r'((?:(?!\n\s*\d+\.\s|\n\s*\d+\.\d+|\n\s*大數據|\n\s*參考文獻).)*)', 
+            r'(?:^|\n)\s*(\d+)\.\s*Ans\s*[\(（]([A-D])[\)）]' # 1. 抓取題號與答案
+            r'[^\n]*'                                       # 2. 忽略答案同行的標題(例如 Word2Vec)
+            r'(?:\n\s*解析[：:]\s*)?'                         # 3. 吸收換行與「解析：」(這幾個字可有可無)
+            r'((?:(?!\n\s*\d+\.\s*Ans|\n\s*\d+\.\d+|\n\s*大數據|\n\s*參考文獻).)*)', # 4. 抓取詳解內容
             re.DOTALL
         )
         
         ans_matches = ans_pattern.findall(clean_text)
 
-        # 拉鍊式配對 (Zip)
-        paired_count = 0
-        pair_limit = min(len(questions_list), len(ans_matches))
+        # 🌟 教授的防錯大絕招：改用「字典對應」取代「拉鍊配對」
+        ans_dict = {}
+        for m in ans_matches:
+            q_num = int(m[0])
+            exp_text = m[2].replace('\n', '').strip()
+            
+            ans_dict[q_num] = {
+                "ans": m[1].strip(), 
+                # 如果官方剛好這題沒給詳解，我們就塞預設文字
+                "exp": exp_text if exp_text else "官方試卷未提供解析"
+            }
 
-        for i in range(pair_limit):
-            questions_list[i]["correctAnswer"] = ans_matches[i][1].strip()
-            questions_list[i]["explanation"] = ans_matches[i][2].replace('\n', '').strip()
-            paired_count += 1
+        paired_count = 0
+        for q in questions_list:
+            q_num = q["original_q_num"]
+            if q_num in ans_dict:
+                q["correctAnswer"] = ans_dict[q_num]["ans"]
+                q["explanation"] = ans_dict[q_num]["exp"]
+                paired_count += 1
 
         self.questions_data = questions_list
         

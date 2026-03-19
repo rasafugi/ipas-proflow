@@ -117,18 +117,20 @@ def submit_test(record: TestRecord):
         if 'connection' in locals() and connection.open:
             connection.close()
 
-# 🎯 API 3：獲取榮譽排行榜 (升級版：包含大頭貼)
+# 🎯 API 3：獲取榮譽排行榜 (升級版：過濾重複，只顯示個人最高分)
 @app.get("/api/leaderboard")
 def get_leaderboard():
     try:
         connection = pymysql.connect(**DB_CONFIG)
         with connection.cursor() as cursor:
-            # 🌟 在 SELECT 這裡多加了 u.avatar
+            # 🌟 教授的 SQL 魔法：使用 GROUP BY 把同一個玩家的紀錄綁在一起
+            # 然後用 MAX(t.score) 挑出他所有考試紀錄中的最高分！
             sql = """
-            SELECT u.nickname, u.avatar, t.score, t.created_at 
+            SELECT u.nickname, u.avatar, MAX(t.score) as score, MAX(t.created_at) as created_at 
             FROM test_records t
             JOIN users u ON t.user_code = u.user_code
-            ORDER BY t.score DESC, t.created_at ASC
+            GROUP BY u.user_code, u.nickname, u.avatar
+            ORDER BY score DESC, created_at DESC
             LIMIT 10
             """
             cursor.execute(sql)
