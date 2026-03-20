@@ -16,7 +16,7 @@ DB_CONFIG = {
     "host": "localhost",
     "port": 3306,
     "user": "root",
-    "password": "popd26318",  # 請確認這是你的 MySQL 密碼
+    "password": "password123",  # 請確認這是你的 MySQL 密碼
     "database": "ipas_proflow",
     "charset": "utf8mb4"
 }
