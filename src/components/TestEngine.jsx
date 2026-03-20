@@ -18,7 +18,8 @@ export default function TestEngine({ onExit, userCode }) {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`);
+        // 🌟 修正：套用環境變數，並加上隨機抽題的正確路徑
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questions/random`);
         const data = await response.json();
         if (data.status === "success") setTestQuestions(data.data);
       } catch (error) {
@@ -60,7 +61,8 @@ export default function TestEngine({ onExit, userCode }) {
     const finalScore = Math.round((correctCount / totalQuestions) * 100);
 
     try {
-      await fetch("http://127.0.0.1:8000/api/submit_test", {
+      // 🌟 修正：把原本寫死的 127.0.0.1 換成環境變數
+      await fetch(`${import.meta.env.VITE_API_URL}/api/submit_test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

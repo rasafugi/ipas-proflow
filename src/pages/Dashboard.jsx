@@ -29,7 +29,8 @@ export default function Dashboard() {
 
   const fetchLeaderboard = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/leaderboard");
+      // 🌟 修正：套用環境變數，並加上正確的排行榜路徑
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard`);
       const data = await res.json();
       if (data.status === "success") setLeaderboard(data.data);
     } catch (error) {
@@ -39,7 +40,8 @@ export default function Dashboard() {
 
   const fetchMyRecords = async (code) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`);
+      // 🌟 修正：套用環境變數，並將玩家的 code 動態帶入路徑
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/my_records/${code}`);
       const data = await res.json();
       if (data.status === "success") setMyRecords(data.data);
     } catch (error) {
