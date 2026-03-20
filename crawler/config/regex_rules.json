@@ -1,7 +1,8 @@
 {
   "ipas_112_format": {
-    "description": "適用於 112 年官方發布試題 (題目與解答分離)",
-    "start_anchor": "模擬考題",
+    "description": "適用於 112 年官方發布試題 (跳過課文版)",
+    "start_anchor": "",
+    "skip_pages": 25,
     "cleaning_rules": [
       { "pattern": "[^\\n]*[^\\n]*\\n", "repl": "\\n" },
       { "pattern": "\\n\\s*[A-Za-z0-9]+-\\d+\\s*\\n", "repl": "\\n" },
@@ -13,27 +14,29 @@
   },
   "ipas_114_official": {
     "description": "適用於 114 年公告試題 (答案在題號前方或同列)",
-    "start_anchor": "答案 題 目",
+    "start_anchor": "答案",
+    "skip_pages": 0,
     "cleaning_rules": [
-      { "pattern": "114 年.*【公告試題】\\n", "repl": "" },
-      { "pattern": "第.*科：.*\\n", "repl": "" },
-      { "pattern": "考試日期：.*試題公告日期：.*\\n", "repl": "" },
-      { "pattern": "第\\s*\\d+\\s*頁，共\\s*\\d+\\s*頁\\n", "repl": "" },
-      { "pattern": "答案\\s*題\\s*目\\n", "repl": "" }
+      { "pattern": "114\\s*年.*【公告試題】\\n?", "repl": "" },
+      { "pattern": "第.*科[：:].*\\n?", "repl": "" },
+      { "pattern": "考試日期[：:].*試題公告日期[：:].*\\n?", "repl": "" },
+      { "pattern": "第\\s*\\d+\\s*頁[，,]共\\s*\\d+\\s*頁\\n?", "repl": "" },
+      { "pattern": "答案\\s*題\\s*目\\n?", "repl": "" }
     ],
     "question_pattern": "(?:^|\\n)\\s*(?P<ans>[A-DＡ-Ｄ])\\s*\\n?\\s*(?P<q_num>\\d+)\\.\\s+(?P<question>.*?)\\s*[\\(（]A[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]B[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]C[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]D[\\)）]\\s*(?P<D>.*?)\\s*(?=\\n\\s*[A-DＡ-Ｄ]\\s*\\n?\\s*\\d+\\.\\s|$)",
     "answer_pattern": ""
   },
   "ipas_114_sample": {
     "description": "適用於 114 年考試樣題 (題號後接答案)",
-    "start_anchor": "題號 答案 題目",
+    "start_anchor": "題號",
+    "skip_pages": 0,
     "cleaning_rules": [
-      { "pattern": "iPAS AI .*考試樣題\\n", "repl": "" },
-      { "pattern": "\\(樣題範例非正式考題，僅供參考使用\\)\\n", "repl": "" },
-      { "pattern": "114\\.\\d+ 版\\n", "repl": "" },
-      { "pattern": "◆ 科目.*\\n", "repl": "" },
-      { "pattern": "\\n\\s*\\d+\\s*\\n題號\\s*答案\\s*題目\\n", "repl": "\\n" },
-      { "pattern": "題號\\s*答案\\s*題目\\n", "repl": "" }
+      { "pattern": "iPAS AI .*考試樣題\\n?", "repl": "" },
+      { "pattern": "\\(樣題範例非正式考題，僅供參考使用\\)\\n?", "repl": "" },
+      { "pattern": "114\\.\\d+ 版\\n?", "repl": "" },
+      { "pattern": "◆ 科目.*\\n?", "repl": "" },
+      { "pattern": "\\n\\s*\\d+\\s*\\n題號\\s*答案\\s*題目\\n?", "repl": "\\n" },
+      { "pattern": "題號\\s*答案\\s*題目\\n?", "repl": "" }
     ],
     "question_pattern": "(?:^|\\n)\\s*(?P<q_num>\\d+)\\.\\s*(?P<ans>[A-DＡ-Ｄ])\\s+(?P<question>.*?)\\s*[\\(（]A[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]B[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]C[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]D[\\)）]\\s*(?P<D>.*?)\\s*(?=\\n\\s*\\d+\\.\\s*[A-DＡ-Ｄ]\\s+|$)",
     "answer_pattern": ""

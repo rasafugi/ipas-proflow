@@ -33,19 +33,23 @@ class IPASFileParser:
         raw_text = ""
         with pdfplumber.open(self.pdf_path) as pdf:
             start_anchor = self.rules.get("start_anchor", "")
+            skip_pages = self.rules.get("skip_pages", 0)  # 🌟 新增：讀取要跳過的頁數
             is_awake = False if start_anchor else True
 
             if start_anchor:
                 print(f"👁️ 爬蟲進入休眠模式，尋找起點：【{start_anchor}】...")
+            elif skip_pages > 0:
+                print(f"✂️ 根據規則，直接跳過前 {skip_pages} 頁課文...")
 
-            for i, page in enumerate(pdf.pages):
+            # 🌟 新增：直接從指定的頁數開始掃描
+            for i, page in enumerate(pdf.pages[skip_pages:]):
                 text = page.extract_text()
                 if not text:
                     continue
                 
                 if not is_awake:
                     if start_anchor in text:
-                        print(f"🎯 發現起點於第 {i+1} 頁！爬蟲甦醒！")
+                        print(f"🎯 發現起點於第 {i + skip_pages + 1} 頁！爬蟲甦醒！")
                         is_awake = True
                         raw_text += text + "\n"
                 else:
@@ -56,26 +60,25 @@ class IPASFileParser:
         for rule in self.rules.get("cleaning_rules", []):
             clean_text = re.sub(rule["pattern"], rule["repl"], clean_text)
         
-        print("✅ 啟動動態 Regex 魔法陣 (命名群組升級版)...")
+        print("✅ 啟動動態 Regex 魔法陣 (終極防呆升級版)...")
         
         q_pattern = re.compile(self.rules["question_pattern"], re.DOTALL)
         questions_list = []
         global_id = 1 
 
         for match in q_pattern.finditer(clean_text):
-            d = match.groupdict() # 🌟 取得所有命名群組
+            d = match.groupdict()
             
             q_num = d.get("q_num", global_id)
-            question_text = d.get("question", "").replace('\n', '').strip()
             
-            # 取得選項，並過濾掉 114 公告試題中出現的「；」全形分號
-            opt_a = d.get("A", "").replace('\n', '').replace('；', '').strip()
-            opt_b = d.get("B", "").replace('\n', '').replace('；', '').strip()
-            opt_c = d.get("C", "").replace('\n', '').replace('；', '').strip()
-            opt_d = d.get("D", "").replace('\n', '').replace('；', '').strip()
+            # 🌟 新增 (d.get(...) or "") 防呆，避免抓空時出現 NoneType 崩潰
+            question_text = (d.get("question") or "").replace('\n', '').strip()
+            opt_a = (d.get("A") or "").replace('\n', '').replace('；', '').strip()
+            opt_b = (d.get("B") or "").replace('\n', '').replace('；', '').strip()
+            opt_c = (d.get("C") or "").replace('\n', '').replace('；', '').strip()
+            opt_d = (d.get("D") or "").replace('\n', '').replace('；', '').strip()
             
-            # 取得行內答案 (將可能的全形 Ｃ 轉換為半形 C，並轉大寫)
-            inline_ans = d.get("ans", "A").replace('\n', '').strip().upper()
+            inline_ans = (d.get("ans") or "A").replace('\n', '').strip().upper()
             inline_ans = inline_ans.translate(str.maketrans('ＡＢＣＤ', 'ABCD'))
             
             questions_list.append({
@@ -90,16 +93,15 @@ class IPASFileParser:
             })
             global_id += 1
 
-        # 🌟 如果有設定獨立的解答區塊 (如 112 年格式)，則覆蓋行內預設值
         if self.rules.get("answer_pattern"):
             ans_pattern = re.compile(self.rules["answer_pattern"], re.DOTALL)
             ans_dict = {}
             for m in ans_pattern.finditer(clean_text):
                 d = m.groupdict()
-                q_num = int(d.get("q_num"))
-                ans_dict[q_num] = {
-                    "ans": d.get("ans", "A").strip().upper().translate(str.maketrans('ＡＢＣＤ', 'ABCD')), 
-                    "exp": d.get("exp", "").replace('\n', '').strip() or "官方試卷未提供解析"
+                q_num_ans = int(d.get("q_num"))
+                ans_dict[q_num_ans] = {
+                    "ans": (d.get("ans") or "A").strip().upper().translate(str.maketrans('ＡＢＣＤ', 'ABCD')), 
+                    "exp": (d.get("exp") or "").replace('\n', '').strip() or "官方試卷未提供解析"
                 }
 
             for q in questions_list:
