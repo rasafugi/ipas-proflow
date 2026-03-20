@@ -36,18 +36,23 @@ class IPASFileParser:
             skip_pages = self.rules.get("skip_pages", 0)
             is_awake = False if start_anchor else True
 
-            # 🌟 教授的動態視力校正：從 JSON 讀取該考卷專屬的容錯度數！
+            # 🌟 讀取排版還原模式設定
             x_tol = self.rules.get("extraction_settings", {}).get("x_tolerance", 3)
             y_tol = self.rules.get("extraction_settings", {}).get("y_tolerance", 3)
+            use_layout = self.rules.get("extraction_settings", {}).get("layout", False)
 
             if start_anchor:
                 print(f"👁️ 爬蟲進入休眠模式，尋找起點：【{start_anchor}】...")
             elif skip_pages > 0:
-                print(f"✂️ 根據規則，直接跳過前 {skip_pages} 頁課文...")
+                print(f"✂️ 根據規則，直接跳過前 {skip_pages} 頁...")
 
             for i, page in enumerate(pdf.pages[skip_pages:]):
-                # 套用專屬度數提取文字
-                text = page.extract_text(x_tolerance=x_tol, y_tolerance=y_tol)
+                # 🌟 如果啟用 layout，爬蟲會保留雙欄的真實視覺距離！
+                if use_layout:
+                    text = page.extract_text(layout=True)
+                else:
+                    text = page.extract_text(x_tolerance=x_tol, y_tolerance=y_tol)
+                
                 if not text:
                     continue
                 
@@ -64,7 +69,7 @@ class IPASFileParser:
         for rule in self.rules.get("cleaning_rules", []):
             clean_text = re.sub(rule["pattern"], rule["repl"], clean_text)
         
-        print("✅ 啟動動態 Regex 魔法陣 (括號免疫升級版)...")
+        print("✅ 啟動動態 Regex 魔法陣 (絕對隔離防呆版)...")
         
         q_pattern = re.compile(self.rules["question_pattern"], re.DOTALL)
         questions_list = []
