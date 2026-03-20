@@ -3,19 +3,27 @@
     "description": "適用於 112 年官方發布試題 (跳過課文版)",
     "start_anchor": "",
     "skip_pages": 25,
+    "extraction_settings": {
+      "x_tolerance": 3,
+      "y_tolerance": 3
+    },
     "cleaning_rules": [
       { "pattern": "[^\\n]*[^\\n]*\\n?", "repl": "\\n" },
       { "pattern": "\\n\\s*[A-Za-z0-9]+-\\d+\\s*\\n?", "repl": "\\n" },
       { "pattern": "([。！？])\\s*(\\d+\\.\\d+)", "repl": "\\1\\n\\2" },
       { "pattern": "([。！？])\\s*(大數據|參考文獻)", "repl": "\\1\\n\\2" }
     ],
-    "question_pattern": "(?:^|\\s+)(?P<q_num>\\d+)\\.\\s+(?!Ans)(?P<question>.*?)\\s*[\\(（]A[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]B[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]C[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]D[\\)）]\\s*(?P<D>.*?)\\s*(?=\\s+\\d+\\.\\s|\\s+\\d+\\.\\s*Ans|$)",
+    "question_pattern": "(?:^|\\s+)(?P<q_num>\\d+)\\.\\s+(?!Ans)(?P<question>.*?)\\s*[\\(（]\\s*[AＡ]\\s*[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]\\s*[BＢ]\\s*[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]\\s*[CＣ]\\s*[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]\\s*[DＤ]\\s*[\\)）]\\s*(?P<D>.*?)\\s*(?=\\s+\\d+\\.\\s|\\s+\\d+\\.\\s*Ans|$)",
     "answer_pattern": "(?:^|\\s+)(?P<q_num>\\d+)\\.\\s*Ans\\s*[\\(（](?P<ans>[A-D])[\\)）][^\\n]*(?:\\n\\s*解析[：:]\\s*)?(?P<exp>(?:(?!\\s+\\d+\\.\\s*Ans|\\s+\\d+\\.\\d+|\\s+大數據|\\s+參考文獻).)*)"
   },
   "ipas_114_official": {
     "description": "適用於 114 年公告試題 (答案在題號前方或同列)",
     "start_anchor": "答案",
     "skip_pages": 0,
+    "extraction_settings": {
+      "x_tolerance": 3,
+      "y_tolerance": 10
+    },
     "cleaning_rules": [
       { "pattern": "114\\s*年.*【公告試題】\\n?", "repl": "" },
       { "pattern": "第.*科[：:].*\\n?", "repl": "" },
@@ -23,13 +31,17 @@
       { "pattern": "第\\s*\\d+\\s*頁[，,]共\\s*\\d+\\s*頁\\n?", "repl": "" },
       { "pattern": "答案\\s*題\\s*目\\n?", "repl": "" }
     ],
-    "question_pattern": "(?:^|\\s+)(?P<ans>[A-DＡ-Ｄ])\\s+(?P<q_num>\\d+)\\.\\s+(?P<question>.*?)\\s*[\\(（]A[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]B[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]C[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]D[\\)）]\\s*(?P<D>.*?)\\s*(?=\\s+[A-DＡ-Ｄ]\\s+\\d+\\.\\s|$)",
+    "question_pattern": "(?:^|\\s+)(?P<ans>[A-DＡ-Ｄ])\\s+(?P<q_num>\\d+)\\.\\s+(?P<question>.*?)\\s*[\\(（]\\s*[AＡ]\\s*[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]\\s*[BＢ]\\s*[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]\\s*[CＣ]\\s*[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]\\s*[DＤ]\\s*[\\)）]\\s*(?P<D>.*?)\\s*(?=\\s+[A-DＡ-Ｄ]\\s+\\d+\\.\\s|$)",
     "answer_pattern": ""
   },
   "ipas_114_sample": {
     "description": "適用於 114 年考試樣題 (題號後接答案)",
     "start_anchor": "題號",
     "skip_pages": 0,
+    "extraction_settings": {
+      "x_tolerance": 3,
+      "y_tolerance": 3
+    },
     "cleaning_rules": [
       { "pattern": "iPAS AI .*考試樣題\\n?", "repl": "" },
       { "pattern": "\\(樣題範例非正式考題，僅供參考使用\\)\\n?", "repl": "" },
@@ -38,7 +50,7 @@
       { "pattern": "題號\\s*答案\\s*題目\\n?", "repl": "" },
       { "pattern": "\\n\\s*\\d+\\s*\\n", "repl": "\\n" }
     ],
-    "question_pattern": "(?:^|\\s+)(?P<q_num>\\d+)\\.\\s*(?P<ans>[A-DＡ-Ｄ])\\s+(?P<question>.*?)\\s*[\\(（]A[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]B[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]C[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]D[\\)）]\\s*(?P<D>.*?)\\s*(?=\\s+\\d+\\.\\s*[A-DＡ-Ｄ]\\s+|$)",
+    "question_pattern": "(?:^|\\s+)(?P<q_num>\\d+)\\.\\s*(?P<ans>[A-DＡ-Ｄ])\\s+(?P<question>.*?)\\s*[\\(（]\\s*[AＡ]\\s*[\\)）]\\s*(?P<A>.*?)\\s*[\\(（]\\s*[BＢ]\\s*[\\)）]\\s*(?P<B>.*?)\\s*[\\(（]\\s*[CＣ]\\s*[\\)）]\\s*(?P<C>.*?)\\s*[\\(（]\\s*[DＤ]\\s*[\\)）]\\s*(?P<D>.*?)\\s*(?=\\s+\\d+\\.\\s*[A-DＡ-Ｄ]\\s+|$)",
     "answer_pattern": ""
   }
 }
