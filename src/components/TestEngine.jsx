@@ -18,7 +18,7 @@ export default function TestEngine({ onExit, userCode }) {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/questions/random");
+        const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`);
         const data = await response.json();
         if (data.status === "success") setTestQuestions(data.data);
       } catch (error) {

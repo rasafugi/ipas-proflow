@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   const fetchMyRecords = async (code) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/my_records/${code}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`);
       const data = await res.json();
       if (data.status === "success") setMyRecords(data.data);
     } catch (error) {
