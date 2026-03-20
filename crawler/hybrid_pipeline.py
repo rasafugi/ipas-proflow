@@ -5,12 +5,30 @@ import os
 import pdfplumber
 
 class IPASFileParser:
-    def __init__(self, download_dir="./downloads"):
+    # 🌟 新增 rule_version 參數，預設使用 112 年格式
+    def __init__(self, download_dir="./downloads", rule_version="ipas_112_format"):
         self.download_dir = download_dir
         self.pdf_path = os.path.join(self.download_dir, "ipas_exam.pdf")
         self.questions_data = []
+        
+        # 🌟 啟動時自動讀取外部規則庫 (JSON)
+        config_path = os.path.join(os.path.dirname(__file__), "config", "regex_rules.json")
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                all_rules = json.load(f)
+                if rule_version not in all_rules:
+                    raise ValueError(f"找不到指定的解析規則：{rule_version}")
+                self.rules = all_rules[rule_version]
+                print(f"⚙️ 成功載入解析規則模組：{self.rules['description']}")
+        except Exception as e:
+            print(f"❌ 讀取規則庫失敗: {e}")
+            self.rules = None
 
     def parse_pdf(self):
+        if not self.rules:
+            print("❌ 缺少解析規則，任務終止。")
+            return
+
         print(f"🧩 啟動 pdfplumber，開始解析文件: {self.pdf_path}")
         if not os.path.exists(self.pdf_path):
             print("❌ 找不到 PDF 檔案！")
@@ -18,41 +36,48 @@ class IPASFileParser:
 
         raw_text = ""
         with pdfplumber.open(self.pdf_path) as pdf:
-            print("✂️ 正在裁切 PDF，直接跳過前 25 頁的無效課文...")
-            for page in pdf.pages[25:]:
+            # 🌟 從 JSON 設定檔讀取起點錨點
+            start_anchor = self.rules.get("start_anchor", "")
+            # 如果有設定錨點，預設為休眠模式 (False)；如果沒設定，就直接甦醒 (True)
+            is_awake = False if start_anchor else True
+
+            if start_anchor:
+                print(f"👁️ 爬蟲進入休眠掃描模式，正在尋找起點標記：【{start_anchor}】...")
+            else:
+                print("👁️ 爬蟲全局掃描模式啟動...")
+
+            for i, page in enumerate(pdf.pages):
                 text = page.extract_text()
-                if text:
+                if not text:
+                    continue
+                
+                # 如果還在休眠狀態，檢查這頁有沒有出現「起點標記」
+                if not is_awake:
+                    if start_anchor in text:
+                        print(f"🎯 發現起點標記於第 {i+1} 頁！爬蟲甦醒，開始擷取考題...")
+                        is_awake = True  # 切換為甦醒狀態
+                        raw_text += text + "\n"
+                
+                # 如果已經是甦醒狀態，就把這頁的文字吃進來
+                else:
                     raw_text += text + "\n"
         
-        print("🧹 啟動進階數據清洗，修復 PDF 隱形黏貼問題...")
-        # 1. 消除頁首與頁尾雜訊
-        clean_text = re.sub(r'[^\n]*[^\n]*\n', '\n', raw_text)
-        clean_text = re.sub(r'\n\s*[A-Za-z0-9]+-\d+\s*\n', '\n', clean_text)
+        print("🧹 啟動進階數據清洗，套用動態規則...")
+        clean_text = raw_text
         
-        # 2. 🌟 教授的獨門清洗術：強制斷行！
-        # 如果句號後面緊接著數字章節 (如 "產品。3.3") 或特定關鍵字，強制插入斷行符號
-        clean_text = re.sub(r'([。！？])\s*(\d+\.\d+)', r'\1\n\2', clean_text)
-        clean_text = re.sub(r'([。！？])\s*(大數據|參考文獻)', r'\1\n\2', clean_text)
+        # 🌟 動態執行清洗規則
+        for rule in self.rules["cleaning_rules"]:
+            clean_text = re.sub(rule["pattern"], rule["repl"], clean_text)
         
-        print("✅ 清洗完成！啟動防偽版 Regex 魔法陣...")
+        print("✅ 清洗完成！啟動動態 Regex 魔法陣...")
         
         # ==========================================
-        # 🎯 魔法陣 1：題目抓取 (新增防偽標籤)
+        # 🎯 魔法陣 1：動態題目抓取
         # ==========================================
-        q_pattern = re.compile(
-            r'(?:^|\n)\s*(\d+)\.\s+'                       
-            r'(?!Ans)'                                     
-            # 🛑 核心防禦：題目到 (A) 之間，絕對不允許出現跨行的下一個數字 (例如 \n2.)！
-            r'((?:(?![\(（]A[\)）]|\n\s*\d+\.).)*?)'                  
-            r'[\(（]A[\)）]\s*((?:(?![\(（]B[\)）]|\n\s*\d+\.).)*?)'   
-            r'[\(（]B[\)）]\s*((?:(?![\(（]C[\)）]|\n\s*\d+\.).)*?)'   
-            r'[\(（]C[\)）]\s*((?:(?![\(（]D[\)）]|\n\s*\d+\.).)*?)'   
-            r'[\(（]D[\)）]\s*(.*?)\s*'                    
-            r'(?=\n\s*\d+\.\s|\n\s*\d+\.\s*Ans|$)',        
-            re.DOTALL
-        )
-        
+        # 從 JSON 中讀取正則表達式並編譯
+        q_pattern = re.compile(self.rules["question_pattern"], re.DOTALL)
         q_matches = q_pattern.findall(clean_text)
+        
         questions_list = []
         global_id = 1 
 
@@ -68,32 +93,22 @@ class IPASFileParser:
                     "D": match[5].replace('\n', '').strip()
                 },
                 "correctAnswer": "A", 
-                "explanation": "暫無解析"
+                "explanation": "官方試卷未提供解析"
             })
             global_id += 1
 
         # ==========================================
-        # 🎯 魔法陣 2：解答抓取 (防彈升級版)
+        # 🎯 魔法陣 2：動態解答抓取與配對
         # ==========================================
-        ans_pattern = re.compile(
-            r'(?:^|\n)\s*(\d+)\.\s*Ans\s*[\(（]([A-D])[\)）]' # 1. 抓取題號與答案
-            r'[^\n]*'                                       # 2. 忽略答案同行的標題(例如 Word2Vec)
-            r'(?:\n\s*解析[：:]\s*)?'                         # 3. 吸收換行與「解析：」(這幾個字可有可無)
-            r'((?:(?!\n\s*\d+\.\s*Ans|\n\s*\d+\.\d+|\n\s*大數據|\n\s*參考文獻).)*)', # 4. 抓取詳解內容
-            re.DOTALL
-        )
-        
+        ans_pattern = re.compile(self.rules["answer_pattern"], re.DOTALL)
         ans_matches = ans_pattern.findall(clean_text)
 
-        # 🌟 教授的防錯大絕招：改用「字典對應」取代「拉鍊配對」
         ans_dict = {}
         for m in ans_matches:
             q_num = int(m[0])
             exp_text = m[2].replace('\n', '').strip()
-            
             ans_dict[q_num] = {
                 "ans": m[1].strip(), 
-                # 如果官方剛好這題沒給詳解，我們就塞預設文字
                 "exp": exp_text if exp_text else "官方試卷未提供解析"
             }
 
@@ -106,21 +121,9 @@ class IPASFileParser:
                 paired_count += 1
 
         self.questions_data = questions_list
-        
         print(f"🎯 題目解析完成！共精準抽取了 {len(self.questions_data)} 題。")
         print(f"🔗 解答循序配對完成！成功結合了 {paired_count} 題的答案與解析。")
-
-    def export_json(self):
-        if not self.questions_data:
-            return
-            
-        output_file = "ipas_questions.json"
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(self.questions_data, f, ensure_ascii=False, indent=2)
-            
-        print(f"💾 完美！修復後的無雜訊題庫已匯出至 {output_file}！")
 
 if __name__ == "__main__":
     parser = IPASFileParser()
     parser.parse_pdf()
-    parser.export_json()
