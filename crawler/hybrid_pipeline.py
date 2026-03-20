@@ -33,7 +33,7 @@ class IPASFileParser:
         raw_text = ""
         with pdfplumber.open(self.pdf_path) as pdf:
             start_anchor = self.rules.get("start_anchor", "")
-            skip_pages = self.rules.get("skip_pages", 0)  # 🌟 新增：讀取要跳過的頁數
+            skip_pages = self.rules.get("skip_pages", 0)
             is_awake = False if start_anchor else True
 
             if start_anchor:
@@ -41,9 +41,9 @@ class IPASFileParser:
             elif skip_pages > 0:
                 print(f"✂️ 根據規則，直接跳過前 {skip_pages} 頁課文...")
 
-            # 🌟 新增：直接從指定的頁數開始掃描
             for i, page in enumerate(pdf.pages[skip_pages:]):
-                text = page.extract_text()
+                # 🌟 教授的空間校正魔法：x_tolerance 與 y_tolerance 強制把落差字元合併成同一行！
+                text = page.extract_text(x_tolerance=10, y_tolerance=10)
                 if not text:
                     continue
                 
@@ -70,8 +70,6 @@ class IPASFileParser:
             d = match.groupdict()
             
             q_num = d.get("q_num", global_id)
-            
-            # 🌟 新增 (d.get(...) or "") 防呆，避免抓空時出現 NoneType 崩潰
             question_text = (d.get("question") or "").replace('\n', '').strip()
             opt_a = (d.get("A") or "").replace('\n', '').replace('；', '').strip()
             opt_b = (d.get("B") or "").replace('\n', '').replace('；', '').strip()
