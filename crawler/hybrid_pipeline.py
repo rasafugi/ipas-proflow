@@ -36,22 +36,28 @@ class IPASFileParser:
             skip_pages = self.rules.get("skip_pages", 0)
             is_awake = False if start_anchor else True
 
-            # 🌟 讀取排版還原模式設定
-            x_tol = self.rules.get("extraction_settings", {}).get("x_tolerance", 3)
-            y_tol = self.rules.get("extraction_settings", {}).get("y_tolerance", 3)
-            use_layout = self.rules.get("extraction_settings", {}).get("layout", False)
+            # 讀取排版設定
+            x_tol = self.rules.get("extraction_settings", {}).get("x_tolerance", 2)
+            y_tol = self.rules.get("extraction_settings", {}).get("y_tolerance", 5)
+            is_two_col = self.rules.get("extraction_settings", {}).get("is_two_column", False)
 
             if start_anchor:
-                print(f"👁️ 爬蟲進入休眠模式，尋找起點：【{start_anchor}】...")
+                print(f"👁️ 爬蟲休眠中，尋找起點：【{start_anchor}】...")
             elif skip_pages > 0:
-                print(f"✂️ 根據規則，直接跳過前 {skip_pages} 頁...")
+                print(f"✂️ 根據規則，跳過前 {skip_pages} 頁...")
 
             for i, page in enumerate(pdf.pages[skip_pages:]):
-                # 🌟 如果啟用 layout，爬蟲會保留雙欄的真實視覺距離！
-                if use_layout:
-                    text = page.extract_text(layout=True)
+                # 🌟 教授的物理切割術：如果是雙欄考卷，直接把頁面切成左右兩半獨立讀取！
+                if is_two_col:
+                    w, h = page.width, page.height
+                    left_page = page.within_bbox((0, 0, w/2, h))
+                    right_page = page.within_bbox((w/2, 0, w, h))
+                    
+                    text_left = left_page.extract_text(x_tolerance=x_tol, y_tolerance=y_tol) or ""
+                    text_right = right_page.extract_text(x_tolerance=x_tol, y_tolerance=y_tol) or ""
+                    text = text_left + "\n" + text_right
                 else:
-                    text = page.extract_text(x_tolerance=x_tol, y_tolerance=y_tol)
+                    text = page.extract_text(x_tolerance=x_tol, y_tolerance=y_tol) or ""
                 
                 if not text:
                     continue
@@ -69,7 +75,7 @@ class IPASFileParser:
         for rule in self.rules.get("cleaning_rules", []):
             clean_text = re.sub(rule["pattern"], rule["repl"], clean_text)
         
-        print("✅ 啟動動態 Regex 魔法陣 (絕對隔離防呆版)...")
+        print("✅ 啟動動態 Regex 魔法陣 (絕對隔離防護罩版)...")
         
         q_pattern = re.compile(self.rules["question_pattern"], re.DOTALL)
         questions_list = []
@@ -80,10 +86,12 @@ class IPASFileParser:
             
             q_num = d.get("q_num", global_id)
             question_text = (d.get("question") or "").replace('\n', '').strip()
-            opt_a = (d.get("A") or "").replace('\n', '').replace('；', '').strip()
-            opt_b = (d.get("B") or "").replace('\n', '').replace('；', '').strip()
-            opt_c = (d.get("C") or "").replace('\n', '').replace('；', '').strip()
-            opt_d = (d.get("D") or "").replace('\n', '').replace('；', '').strip()
+            
+            # 🌟 資料庫防呆機制：強制截斷超過 250 字元的選項，徹底杜絕 Data too long 崩潰！
+            opt_a = (d.get("A") or "").replace('\n', '').replace('；', '').strip()[:250]
+            opt_b = (d.get("B") or "").replace('\n', '').replace('；', '').strip()[:250]
+            opt_c = (d.get("C") or "").replace('\n', '').replace('；', '').strip()[:250]
+            opt_d = (d.get("D") or "").replace('\n', '').replace('；', '').strip()[:250]
             
             inline_ans = (d.get("ans") or "A").replace('\n', '').strip().upper()
             inline_ans = inline_ans.translate(str.maketrans('ＡＢＣＤ', 'ABCD'))
